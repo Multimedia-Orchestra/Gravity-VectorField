@@ -5,71 +5,54 @@ import org.zhang.lib._
 
 class Main extends MyPApplet {
 
-  import PApplet._;
-  import PConstants._;
+  val NUM_CELLS = 120
 
-  val NUM_CELLS = 70
-  lazy val dimensions = Vec2(width, height)
-  lazy val CELL_SIZE = dimensions / NUM_CELLS
+  import PApplet._
+  import PConstants._
 
-  override def setup() {
-//    size(displayWidth, displayHeight, P2D)
-    size(600, 600, P2D)
-    noSmooth()
-  }
+  class Cell(val x: Int, val y: Int, var vec2:PVector = new PVector()) {
+    val pos = new PVector(map(x+.5f, 0, NUM_CELLS, 0, width), map(y+.5f, 0, NUM_CELLS, 0, height))
 
-  def profile[A](name:String)(m: => A) {
-    profileMap(name) += time(m)._2
-  }
-  def resetProfiler() {
-    profileMap.foreach { case (k, v) => profileMap(k) = 0 }
-  }
-  def profileReport = {
-    val total = profileMap.values.sum
-    profileMap.map{ case (k, v) => k+": "+v.toDouble / total }.mkString("\n")
-  }
-  val profileMap = collection.mutable.Map[String, Long]().withDefaultValue(0)
-
-  class Cell(val x: Int, val y: Int, var vec2:Vec2 = Vec2()) {
-    val pos = Vec2(map(x+.5f, 0, NUM_CELLS, 0, width), map(y+.5f, 0, NUM_CELLS, 0, height))
-
-    lazy val neighbors = for (v <- List(Vec2(-1, 0), Vec2(1, 0), Vec2(0, -1), Vec2(0, 1)).map {_ + Vec2(x, y)})
-                           yield vectorField(wrapIndex(v.x.toInt))(wrapIndex(v.y.toInt))
+    lazy val neighbors = for(v <- 0 until 4) yield vectorField(wrapIndex(nxList(v) + x))(wrapIndex(nyList(v) + y))
 
     var balls = collection.mutable.ArrayBuffer[Ball]()
-    var nextVec2 = Vec2()
-
-    def offsetTo(c: Cell) = {
-      import zhang.Methods.distance
-      Vec2(distance(x, c.x, NUM_CELLS), distance(y, c.y, NUM_CELLS))
-    }
+    var nextVec2 = new PVector()
 
     def step() {
       //seed
-//      nextVec2 += Vec2(noise(pos.x / 300, pos.y / 300, millis() / 3000f) - .5f, noise(pos.y / 270, pos.x / 420 + 14, millis() / 3000f) - .5f)
+      val theta = random(TWO_PI)
+      val radius = random(1)
+      nextVec2.add(radius*cos(theta), radius*sin(theta), 0)
+//      nextVec2 += Vec2(noise(pos.x / 300, pos.y / 300, millis() / 3000f) - .5f, noise(pos.x / 300 + 12, pos.y / 300 + 7, millis() / 3000f) - .5f) * .1f
 
-      val stasis = 0.2f
       // keep some for yourself
-      nextVec2 += vec2 * stasis
+      nextVec2.add(vec2.x * stasis, vec2.y * stasis, 0)
 
-      val directionalBias = .5f
-      for(n <- neighbors) {
+      for(i <- 0 until 4) {
+        val n = neighbors(i)
+        val nx = nxList(i)
+        val ny = nyList(i)
         // give equal diffusion to neighbors
-        n.nextVec2 += (vec2 * (1 - stasis) * (1 - directionalBias) ) / 4
+        n.nextVec2.add( vec2.x * diffuEqScalar, vec2.y * diffuEqScalar, 0 )
 
-        val dot = vec2.dot(offsetTo(n))
-        val proportion = if (dot == 0) 0 else max(dot * abs(dot) / vec2.mag2, 0)
-        n.nextVec2 += (vec2 * (1 - stasis) * directionalBias ) * proportion
+        val dot = vec2.dot(nx, ny, 0)
+        val proportion = if (dot == 0) 0 else max(dot * abs(dot) / vec2.magSq(), 0)
+        val diffuDirScalarDotted = diffuDirScalar * proportion
+        n.nextVec2.add(vec2.x * diffuDirScalarDotted, vec2.y * diffuDirScalarDotted, 0 )
       }
 
       //dissipation
-//      nextVec2 *= .95f
+      nextVec2.mult(.9998f)
+
+      //bias slow moving fields towards the bottom, adding a bit of gravity
+      if(abs(nextVec2.y) < 2f) nextVec2.y += .001f
     }
 
     def updateAndDraw() {
-      val offset = nextVec2 - vec2
-      vec2 = nextVec2
-      nextVec2 = Vec2()
+      vec2.set(nextVec2)
+//      vec2.mult(.8f)
+//      vec2.add(nextVec2.x * .2f, nextVec2.y * .2f, 0)
+      nextVec2.set(0, 0, 0)
       balls.clear()
 
       val c = vec2.mag * 10 match {
@@ -79,32 +62,53 @@ class Main extends MyPApplet {
         case e => color(210, 40, 10)
       }
       stroke(c)
-      line(pos, pos + vec2)
+      vertex(pos.x, pos.y)
+      vertex(pos.x + vec2.x, pos.y + vec2.y)
+//      lineShape.setVertex(idx*2 + 1, pos.x + vec2.x, pos.y + vec2.y)
+//      shape(lineShape)
+//      println("drew " + x+", "+y)
+//      line(pos.x, pos.y, pos.x + vec2.x, pos.y + vec2.y)
 //      line(pos, pos + vec2 * 20)
 //      fill(c); noStroke()
 //      rect(pos - CELL_SIZE / 2, CELL_SIZE.x, CELL_SIZE.y)
     }
   }
 
-  class Ball(var pos: Vec2) {
-    def cell = cellAt(pos)
+  var randomState = System.nanoTime()
+  def randomLong = {
+    randomState ^= (randomState << 21)
+    randomState ^= (randomState >>> 35)
+    randomState ^= (randomState << 4)
+    randomState
+  }
+
+  //fast random in (-1..1)
+  def frandom = (randomLong % 4294967296L) / 4294967296.0f
+
+
+  class Ball(var pos: PVector, var vel: PVector = new PVector()) {
     def step() {
-      pos += Vec2.random(cell.balls.length / 10f)
+      val cell = cellAt(pos)
+//      pos.add(frandom * cell.balls.length / 5000f, frandom * cell.balls.length / 5000f, 0)
+      if(keyPressed) {
+        pos.add(frandom * cell.balls.length, frandom * cell.balls.length, 0)
+      }
+      vel.mult(.5f)
+      vel.add(cell.vec2.x * .5f, cell.vec2.y * .5f, 0)
       cell.balls += this
-      pos = Vec2(wrapWorldX(pos.x + cell.vec2.x), wrapWorldY(pos.y + cell.vec2.y))
+      pos.set(wrapWorldX(pos.x + vel.x), wrapWorldY(pos.y + vel.y), 0)
+
+      vel.mult(.95f)
     }
   }
 
-  def wrapIndex(x:Int) = (x + NUM_CELLS) % NUM_CELLS
-  def wrapWorldX(x:Float) = (x + width) % width
-  def wrapWorldY(x:Float) = (x + height) % height
+  def wrapIndex(x:Int) = ((x % NUM_CELLS) + NUM_CELLS) % NUM_CELLS
+  def wrapWorldX(x:Float) = ((x % width) + width) % width
+  def wrapWorldY(x:Float) = ((x % height) + height) % height
 
   //world position into indexed position
-  def cellAt(pos: Vec2) = vectorField(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt))(wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
+  def cellAt(pos: PVector) = vectorField(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt))(wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
   def indexPosition(pos: Vec2) = Vec2(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt), wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
-
-  lazy val vectorField = collection.mutable.Seq.tabulate(NUM_CELLS, NUM_CELLS)((x, y) => new Cell(x, y))
-  lazy val balls = collection.mutable.Seq.fill(20000){ new Ball(Vec2(random(width), random(height))) }
 
   //from, to are index locations
   def pushField(from:Vec2, to:Vec2, force:Vec2) {
@@ -116,13 +120,13 @@ class Main extends MyPApplet {
     var Vec2(x0, y0) = from
 
     while(!(x0 == to.x && y0 == to.y)) {
-      vectorField(x0.toInt)(y0.toInt).nextVec2 += force
+      vectorField(x0.toInt)(y0.toInt).nextVec2.add(force.x, force.y, 0)
       if(2*err > -dy) {
         err -= dy
         x0 += sx
       }
       if(x0 == to.x && y0 == to.y) {
-        vectorField(x0.toInt)(y0.toInt).nextVec2 += force
+        vectorField(x0.toInt)(y0.toInt).nextVec2.add(force.x, force.y, 0)
       } else {
         if(2*err < dx) {
           err += dx
@@ -130,6 +134,21 @@ class Main extends MyPApplet {
         }
       }
     }
+  }
+
+  val stasis = 0.5f
+  val directionalBias = 0.5f
+  val diffuEqScalar = ( (1 - stasis) * (1 - directionalBias) ) / 4
+  val diffuDirScalar = (1 - stasis) * directionalBias
+  val nxList = Seq(-1, 1, 0, 0)
+  val nyList = Seq(0, 0, -1, 1)
+
+  lazy val vectorField = collection.mutable.Seq.tabulate(NUM_CELLS, NUM_CELLS)((x, y) => new Cell(x, y))
+  lazy val balls = collection.mutable.Seq.fill(50000){ new Ball(new PVector(random(width), random(height))) }
+
+  override def setup() {
+    size(displayWidth, displayHeight)
+    noSmooth()
   }
 
   override def draw() {
@@ -141,19 +160,18 @@ class Main extends MyPApplet {
     for(c <- vectorField.flatten) {
       c.step()
     }
+    beginShape(LINES)
     for(c <- vectorField.flatten) {
       c.updateAndDraw()
     }
+    endShape()
     loadPixels()
     for(b <- balls) {
       b.step()
-      pixels(b.pos.y.toInt*width + b.pos.x.toInt) = lerpColor(pixels(b.pos.y.toInt*width + b.pos.x.toInt), color(255), .5f)//color(255)
+      pixels(b.pos.y.toInt*width + b.pos.x.toInt) = lerpColor(pixels(b.pos.y.toInt*width + b.pos.x.toInt), 0xffffffff, .5f)//color(255)
     }
     updatePixels()
     println(frameRate)
-
-//    println(profileReport)
-    resetProfiler()
   }
 
   override def keyPressed() {
