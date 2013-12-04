@@ -2,8 +2,91 @@ import org.zhang.geom.Vec2
 import processing.core._
 import org.zhang.lib.MyPApplet
 import org.zhang.lib._
+import SimpleOpenNI._
 
 class Main extends MyPApplet {
+
+  object SkeletonTracker {
+    val context = new SimpleOpenNI(Main.this)
+    if(!context.isInit)
+    {
+       println("Can't init SimpleOpenNI, maybe the camera is not connected!")
+       exit()
+    }
+    context.enableDepth()
+    context.enableUser()
+
+    def update() = {
+      val oldUsers = context.getUsers.filter(context.isTrackingSkeleton(_))
+      val oldSkels = oldUsers.map(skeletalPoints _)
+      context.update()
+      val skeletons = for((userId, idx) <- oldUsers.zipWithIndex if context.isTrackingSkeleton(userId))
+        yield (oldSkels(idx), skeletalPoints(userId))
+      skeletons
+    }
+
+    import SimpleOpenNIConstants._
+    lazy val SKELETAL_EDGES = List(
+      (SKEL_LEFT_SHOULDER, SKEL_LEFT_ELBOW),
+      (SKEL_LEFT_ELBOW, SKEL_LEFT_HAND),
+      (SKEL_NECK, SKEL_LEFT_SHOULDER),
+      (SKEL_LEFT_SHOULDER, SKEL_TORSO),
+      (SKEL_TORSO, SKEL_LEFT_HIP),
+      (SKEL_LEFT_HIP, SKEL_LEFT_KNEE),
+      (SKEL_LEFT_KNEE, SKEL_LEFT_FOOT),
+
+      (SKEL_RIGHT_SHOULDER, SKEL_RIGHT_ELBOW),
+      (SKEL_RIGHT_ELBOW, SKEL_RIGHT_HAND),
+      (SKEL_NECK, SKEL_RIGHT_SHOULDER),
+      (SKEL_RIGHT_SHOULDER, SKEL_TORSO),
+      (SKEL_TORSO, SKEL_RIGHT_HIP),
+      (SKEL_RIGHT_HIP, SKEL_RIGHT_KNEE),
+      (SKEL_RIGHT_KNEE, SKEL_RIGHT_FOOT),
+
+      (SKEL_NECK, SKEL_HEAD)
+    )
+
+    type Skeleton = Map[Int, Vec2]
+
+    def skeletalPoints(userId: Int): Skeleton = List(SKEL_HEAD,
+      SKEL_LEFT_ELBOW,
+      SKEL_LEFT_FINGERTIP,
+      SKEL_LEFT_FOOT,
+      SKEL_LEFT_HAND,
+      SKEL_LEFT_HIP,
+      SKEL_LEFT_KNEE,
+      SKEL_LEFT_SHOULDER,
+      SKEL_NECK,
+      SKEL_RIGHT_ELBOW,
+      SKEL_RIGHT_FINGERTIP,
+      SKEL_RIGHT_FOOT,
+      SKEL_RIGHT_HAND,
+      SKEL_RIGHT_HIP,
+      SKEL_RIGHT_KNEE,
+      SKEL_RIGHT_SHOULDER,
+      SKEL_TORSO).map { p =>
+        val v = new PVector()
+        context.getJointPositionSkeleton(userId, p, v)
+        val proj = new PVector()
+        context.convertRealWorldToProjective(v, proj) // each point is in (0,0) -> (640, 480)
+        (p, Vec2(map(proj.x, 0, 640, 0, width), map(proj.y, 0, 480, 0, height)))
+      }.toMap
+  }
+
+  def onNewUser(curContext: SimpleOpenNI , userId: Int) {
+    println("onNewUser - userId: " + userId);
+    println("\tstart tracking skeleton");
+
+    curContext.startTrackingSkeleton(userId);
+  }
+
+  def onLostUser(curContext: SimpleOpenNI , userId: Int) {
+    println("onLostUser - userId: " + userId);
+  }
+
+  def onVisibleUser(curContext: SimpleOpenNI , userId:Int) {
+    //println("onVisibleUser - userId: " + userId);
+  }
 
   val NUM_CELLS = 120
 
@@ -42,10 +125,10 @@ class Main extends MyPApplet {
       }
 
       //dissipation
-      nextVec2.mult(.9998f)
+      nextVec2.mult(dissipation)
 
       //bias slow moving fields towards the bottom, adding a bit of gravity
-      if(abs(nextVec2.y) < 2f) nextVec2.y += .001f
+      if(abs(nextVec2.y) < 3f) nextVec2.y += .01f
     }
 
     def updateAndDraw() {
@@ -61,7 +144,7 @@ class Main extends MyPApplet {
         case e if e < 1200 => lerpColor(color(255, 190, 160), color(210, 40, 10), (e - 600) / (1200 - 600))
         case e => color(210, 40, 10)
       }
-      stroke(c)
+      stroke(lerpColor(c, color(0), .5f))
       vertex(pos.x, pos.y)
       vertex(pos.x + vec2.x, pos.y + vec2.y)
 //      lineShape.setVertex(idx*2 + 1, pos.x + vec2.x, pos.y + vec2.y)
@@ -90,9 +173,10 @@ class Main extends MyPApplet {
     def step() {
       val cell = cellAt(pos)
 //      pos.add(frandom * cell.balls.length / 5000f, frandom * cell.balls.length / 5000f, 0)
-      if(keyPressed) {
-        pos.add(frandom * cell.balls.length, frandom * cell.balls.length, 0)
-      }
+//      if(keyPressed) {
+        val exp = pow(cell.balls.length, 1.5f) / 100
+        pos.add(frandom * exp, frandom * exp, 0)
+//      }
       vel.mult(.5f)
       vel.add(cell.vec2.x * .5f, cell.vec2.y * .5f, 0)
       cell.balls += this
@@ -108,7 +192,7 @@ class Main extends MyPApplet {
 
   //world position into indexed position
   def cellAt(pos: PVector) = vectorField(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt))(wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
-  def indexPosition(pos: Vec2) = Vec2(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt), wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
+  def indexPosition(pos: Vec2) = Vec2(constrain(map(pos.x, 0, width, 0, NUM_CELLS).toInt, 0, NUM_CELLS), constrain(map(pos.y, 0, height, 0, NUM_CELLS).toInt, 0, NUM_CELLS))
 
   //from, to are index locations
   def pushLine(from:Vec2, to:Vec2, force:Vec2) {
@@ -136,10 +220,7 @@ class Main extends MyPApplet {
     }
   }
 
-  def pushTri(v0: Vec2, v1: Vec2, v2: Vec2, f0: Vec2, f1: Vec2, f2: Vec2) = {
-//    def orient2d(a: Vec2, b: Vec2, c: Vec2) =
-//        (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x)
-//
+  def pushTri(v0: Vec2, v1: Vec2, v2: Vec2, f0: Vec2, f1: Vec2, f2: Vec2) {
     // Compute triangle bounding box
     var minX = min(v0.x, v1.x, v2.x).toInt
     var minY = min(v0.y, v1.y, v2.y).toInt
@@ -149,24 +230,10 @@ class Main extends MyPApplet {
     // Clip against screen bounds
     minX = max(minX, 0)
     minY = max(minY, 0)
-    maxX = min(maxX, width - 1)
-    maxY = min(maxY, height - 1)
+    maxX = min(maxX, NUM_CELLS - 1)
+    maxY = min(maxY, NUM_CELLS - 1)
 //
 //    // Rasterize
-//    for (y <- minY to maxY;
-//         x <- minX to maxX) {
-//      // Determine barycentric coordinates
-//      val p = Vec2(x, y)
-//      val w0 = orient2d(v1, v2, p)
-//      val w1 = orient2d(v2, v0, p)
-//      val w2 = orient2d(v0, v1, p)
-//
-//      // If p is on or inside all edges, render pixel.
-//      if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
-//        var force = Vec2(10, 10)
-//        vectorField(x)(y).nextVec2.add(force.x, force.y, 0)
-//      }
-//    }
     val vs1 = v1 - v0
     val vs2 = v2 - v0
     for (y <- minY to maxY;
@@ -184,8 +251,11 @@ class Main extends MyPApplet {
     }
   }
 
+  val dissipation = .9995f
   val stasis = 0.5f
   val directionalBias = 0.5f
+
+
   val diffuEqScalar = ( (1 - stasis) * (1 - directionalBias) ) / 4
   val diffuDirScalar = (1 - stasis) * directionalBias
   val nxList = Seq(-1, 1, 0, 0)
@@ -197,6 +267,7 @@ class Main extends MyPApplet {
   override def setup() {
     size(displayWidth, displayHeight)
     noSmooth()
+    SkeletonTracker
   }
 
   override def draw() {
@@ -206,7 +277,28 @@ class Main extends MyPApplet {
       val force = mouseVec - Vec2(pmouseX, pmouseY)
       pushTri(indexPosition(Vec2(pmouseX, pmouseY)), indexPosition(mouseVec), indexPosition(Vec2(width/2, height/2)), force, force, Vec2())
     }
+
     background(0)
+//    image(SkeletonTracker.context.userImage(), 0, 0)
+    for(skel <- SkeletonTracker.update) {
+      for((fromId, toId) <- SkeletonTracker.SKELETAL_EDGES) {
+        val from1 = skel._1(fromId)
+        val from2 = skel._2(fromId)
+        val dFrom = (from2 - from1) / 10
+        val to1 = skel._1(toId)
+        val to2 = skel._2(toId)
+        val dTo = (to2 - to1) / 10
+
+        stroke(255, 255, 0, 64)
+        line(from1, to1)
+        line(from1, from2)
+        line(from2, to2)
+        line(to1, to2)
+        pushTri(indexPosition(from1), indexPosition(from2), indexPosition(to1), dFrom, dFrom, dTo)
+        pushTri(indexPosition(to1), indexPosition(to2), indexPosition(from2), dTo, dTo, dFrom)
+      }
+    }
+
     for(c <- vectorField.flatten) {
       c.step()
     }
@@ -218,7 +310,7 @@ class Main extends MyPApplet {
     loadPixels()
     for(b <- balls) {
       b.step()
-      pixels(b.pos.y.toInt*width + b.pos.x.toInt) = lerpColor(pixels(b.pos.y.toInt*width + b.pos.x.toInt), 0xffffffff, .5f)//color(255)
+      pixels(b.pos.y.toInt*width + b.pos.x.toInt) = lerpColor(pixels(b.pos.y.toInt*width + b.pos.x.toInt), 0xff00ffff, .5f)//color(255)
     }
     updatePixels()
     println(frameRate)
