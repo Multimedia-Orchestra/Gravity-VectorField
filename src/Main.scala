@@ -111,7 +111,7 @@ class Main extends MyPApplet {
   def indexPosition(pos: Vec2) = Vec2(wrapIndex(map(pos.x, 0, width, 0, NUM_CELLS).toInt), wrapIndex(map(pos.y, 0, height, 0, NUM_CELLS).toInt))
 
   //from, to are index locations
-  def pushField(from:Vec2, to:Vec2, force:Vec2) {
+  def pushLine(from:Vec2, to:Vec2, force:Vec2) {
     val dx = abs(to.x-from.x)
     val dy = abs(to.y-from.y)
     val sx = if(from.x < to.x) 1 else -1
@@ -136,6 +136,54 @@ class Main extends MyPApplet {
     }
   }
 
+  def pushTri(v0: Vec2, v1: Vec2, v2: Vec2, f0: Vec2, f1: Vec2, f2: Vec2) = {
+//    def orient2d(a: Vec2, b: Vec2, c: Vec2) =
+//        (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x)
+//
+    // Compute triangle bounding box
+    var minX = min(v0.x, v1.x, v2.x).toInt
+    var minY = min(v0.y, v1.y, v2.y).toInt
+    var maxX = max(v0.x, v1.x, v2.x).toInt
+    var maxY = max(v0.y, v1.y, v2.y).toInt
+
+    // Clip against screen bounds
+    minX = max(minX, 0)
+    minY = max(minY, 0)
+    maxX = min(maxX, width - 1)
+    maxY = min(maxY, height - 1)
+//
+//    // Rasterize
+//    for (y <- minY to maxY;
+//         x <- minX to maxX) {
+//      // Determine barycentric coordinates
+//      val p = Vec2(x, y)
+//      val w0 = orient2d(v1, v2, p)
+//      val w1 = orient2d(v2, v0, p)
+//      val w2 = orient2d(v0, v1, p)
+//
+//      // If p is on or inside all edges, render pixel.
+//      if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+//        var force = Vec2(10, 10)
+//        vectorField(x)(y).nextVec2.add(force.x, force.y, 0)
+//      }
+//    }
+    val vs1 = v1 - v0
+    val vs2 = v2 - v0
+    for (y <- minY to maxY;
+         x <- minX to maxX) {
+      val q = Vec2(x - v0.x, y - v0.y)
+
+      val s = (vs1 cross q) / (vs1 cross vs2)
+      val t = (q cross vs2) / (vs1 cross vs2)
+
+      if ( (t >= 0) && (s >= 0) && (t + s <= 1))
+      { /* inside triangle */
+        val force = f0*s + f1*t + f2*(1 - t - s)
+        vectorField(x)(y).nextVec2.add(force.x, force.y, 0)
+      }
+    }
+  }
+
   val stasis = 0.5f
   val directionalBias = 0.5f
   val diffuEqScalar = ( (1 - stasis) * (1 - directionalBias) ) / 4
@@ -154,7 +202,9 @@ class Main extends MyPApplet {
   override def draw() {
     if(mousePressed) {
 //      cellAt(mouseVec).nextVec2 += mouseVec - Vec2(pmouseX, pmouseY)
-      pushField(indexPosition(Vec2(pmouseX, pmouseY)), indexPosition(mouseVec), mouseVec - Vec2(pmouseX, pmouseY))
+//      pushLine(indexPosition(Vec2(pmouseX, pmouseY)), indexPosition(mouseVec), mouseVec - Vec2(pmouseX, pmouseY))
+      val force = mouseVec - Vec2(pmouseX, pmouseY)
+      pushTri(indexPosition(Vec2(pmouseX, pmouseY)), indexPosition(mouseVec), indexPosition(Vec2(width/2, height/2)), force, force, Vec2())
     }
     background(0)
     for(c <- vectorField.flatten) {
