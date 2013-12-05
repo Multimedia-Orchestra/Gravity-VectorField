@@ -19,8 +19,8 @@ class Gravity extends MyPApplet {
       //get the leftmost and rightmost fingers as the two points
       leap.countHands() match {
         case 0 => List()
-        case 1 => List(leap.getHands.get(0).getFrontFinger)
-        case _ => List(leap.getHands.get(0).getFrontFinger, leap.getHands.get(1).getFrontFinger)
+        case 1 => leap.getHands.headOption.map{_.getFrontFinger}.toList
+        case _ => List(leap.getHands.headOption.map{_.getFrontFinger}, leap.getHands.drop(1).headOption.map{_.getFrontFinger}).flatten
       }
     }
   }
@@ -84,7 +84,7 @@ class Gravity extends MyPApplet {
     hands.headOption.
       map{f =>
         val amount = constrain(sqrt(map(f.getTouchDistance, 0, 1, 1, 0)), .001f, .98f)
-        fill(255, 245, 245, 2)
+        fill(255, 235, 235, 2)
         noStroke()
         var radius = 100f
         while(radius > 2) {
@@ -99,7 +99,7 @@ class Gravity extends MyPApplet {
         noStroke()
         var radius = 100f
         while(radius > 2) {
-          fill(lerpColor(color(0), color(245, 245, 255, 2), radius / 100f))
+          fill(lerpColor(color(0), color(112, 112, 160, 2), radius / 100f))
           ellipse(f.getPosition.x, f.getPosition.y, radius, radius)
           radius *= amount
         }
