@@ -135,6 +135,7 @@ class Main extends MyPApplet {
       vec2.set(nextVec2)
 //      vec2.mult(.8f)
 //      vec2.add(nextVec2.x * .2f, nextVec2.y * .2f, 0)
+      if(java.lang.Float.isNaN(vec2.x)) vec2.set(0, 0, 0);
       nextVec2.set(0, 0, 0)
       balls.clear()
 
@@ -144,7 +145,7 @@ class Main extends MyPApplet {
         case e if e < 1200 => lerpColor(color(255, 190, 160), color(210, 40, 10), (e - 600) / (1200 - 600))
         case e => color(210, 40, 10)
       }
-      stroke(lerpColor(c, color(0), .5f))
+      stroke(c)
       vertex(pos.x, pos.y)
       vertex(pos.x + vec2.x, pos.y + vec2.y)
 //      lineShape.setVertex(idx*2 + 1, pos.x + vec2.x, pos.y + vec2.y)
@@ -177,10 +178,12 @@ class Main extends MyPApplet {
         val exp = pow(cell.balls.length, 1.5f) / 100
         pos.add(frandom * exp, frandom * exp, 0)
 //      }
+      if(java.lang.Float.isNaN(vel.x)) vel.set(0, 0, 0)
       vel.mult(.5f)
       vel.add(cell.vec2.x * .5f, cell.vec2.y * .5f, 0)
       cell.balls += this
       pos.set(wrapWorldX(pos.x + vel.x), wrapWorldY(pos.y + vel.y), 0)
+      if(java.lang.Float.isNaN(pos.x)) pos.set(0, 0, 0)
 
       vel.mult(.95f)
     }
@@ -251,9 +254,9 @@ class Main extends MyPApplet {
     }
   }
 
-  val dissipation = .9995f
-  val stasis = 0.5f
-  val directionalBias = 0.5f
+  val dissipation = .99f
+  val stasis = 0.1f
+  val directionalBias = 0.9f
 
 
   val diffuEqScalar = ( (1 - stasis) * (1 - directionalBias) ) / 4
@@ -284,10 +287,10 @@ class Main extends MyPApplet {
       for((fromId, toId) <- SkeletonTracker.SKELETAL_EDGES) {
         val from1 = skel._1(fromId)
         val from2 = skel._2(fromId)
-        val dFrom = (from2 - from1) / 10
+        val dFrom = (from2 - from1) / 4
         val to1 = skel._1(toId)
         val to2 = skel._2(toId)
-        val dTo = (to2 - to1) / 10
+        val dTo = (to2 - to1) / 4
 
         stroke(255, 255, 0, 64)
         line(from1, to1)
