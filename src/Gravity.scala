@@ -17,10 +17,11 @@ class Gravity extends MyPApplet {
     //returns a list of 0, 1, or 2 Fingers
     def getHands = {
       //get the leftmost and rightmost fingers as the two points
+      def minFinger(h: Option[Hand]) = h.map{_.getFingers.filter{_.getPosition.z != 50.0f}.sortBy{_.getPosition.z}.headOption}.flatten.toList
       leap.countHands() match {
         case 0 => List()
-        case 1 => leap.getHands.headOption.map{_.getFrontFinger}.toList
-        case _ => List(leap.getHands.headOption.map{_.getFrontFinger}, leap.getHands.drop(1).headOption.map{_.getFrontFinger}).flatten
+        case 1 => minFinger(leap.getHands.headOption)
+        case _ => List(minFinger(leap.getHands.headOption), minFinger(leap.getHands.drop(1).headOption)).flatten
       }
     }
   }
@@ -48,7 +49,7 @@ class Gravity extends MyPApplet {
     def draw() {
       if(!(pos.x < 0 || pos.y < 0 || pos.x >= width || pos.y >= height)) {
         val idx = pos.y.toInt * width + pos.x.toInt
-        //this line has a non-deterministic condition in it but it doesn't make a difference visually
+        //this line has a non-deterministic set in it but it doesn't make a difference visually
         pixels(idx) = colorCache(pixels(idx) & 0xFF) // get the blue component (which is the same as red, and green, and the brightness)
       }
     }
@@ -57,20 +58,23 @@ class Gravity extends MyPApplet {
   def reset() {
     for(i <- 0 until dots.length) {
       dots(i).vel.set(0, 0)
-      dots(i).pos.set(i * width / 1000000f, height/2)
+      dots(i).pos.set(i.toFloat * width / Gravity.NUM, height/2)
     }
   }
 
-  lazy val dots = Array.tabulate(1000000)(i => new Dot(new PVector(i * width / 1000000f, height/2)))
+  lazy val dots = Array.tabulate(Gravity.NUM)(i => new Dot(new PVector(i.toFloat * width / Gravity.NUM, height/2)))
   lazy val parDots = dots.par
 
-  val cellAlpha = 14
-  lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (cellAlpha / 255f)).toInt))
+  lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
 
   var emptyCount = 0
   override def setup() {
     size(displayWidth, displayHeight)
+    imageMode(CENTER)
   }
+
+  lazy val attract = loadImage("attract.png")
+  lazy val repel = loadImage("repel.png")
 
   override def draw() {
     background(0)
@@ -78,33 +82,26 @@ class Gravity extends MyPApplet {
     val hands = Tracker.getHands
     if(hands.isEmpty) emptyCount += 1
     else emptyCount = 0
-    if(emptyCount == 1200) {
+    if(emptyCount == Gravity.EMPTY_COUNT) {
       reset()
     }
+    println(hands)
     hands.headOption.
       map{f =>
-        val amount = constrain(sqrt(map(f.getTouchDistance, 0, 1, 1, 0)), .001f, .98f)
-        fill(255, 235, 235, 2)
-        noStroke()
-        var radius = 100f
-        while(radius > 2) {
-          ellipse(f.getPosition.x, f.getPosition.y, radius, radius)
-          radius *= amount
-        }
+        val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
+        val tintC = if(amount < .998f) 128 else 255
+        tint(tintC, amount * 255)
+        image(attract, f.getPosition.x, f.getPosition.y)
         f
-      }.filter(_.getTouchDistance < 0).map{f => p1.set(f.getPosition.x, f.getPosition.y, -1)}.getOrElse(p1.z = 0)
+      }.filter(_.getPosition.z > 50).map{f => p1.set(f.getPosition.x, f.getPosition.y, -(1+f.getVelocity.mag() / 1000f))}.getOrElse(p1.z = 0)
     hands.drop(1).headOption.
       map{f =>
-        val amount = constrain(sqrt(map(f.getTouchDistance, 0, 1, 1, 0)), .001f, .98f)
-        noStroke()
-        var radius = 100f
-        while(radius > 2) {
-          fill(lerpColor(color(0), color(112, 112, 160, 2), radius / 100f))
-          ellipse(f.getPosition.x, f.getPosition.y, radius, radius)
-          radius *= amount
-        }
+        val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
+        val tintC = if(amount < .998f) 128 else 255
+        tint(tintC, amount * 255)
+        image(repel, f.getPosition.x, f.getPosition.y)
         f
-      }.filter(_.getTouchDistance < 0).map{f => p2.set(f.getPosition.x, f.getPosition.y, .95f)}.getOrElse(p2.z = 0)
+      }.filter(_.getPosition.z > 50).map{f => p2.set(f.getPosition.x, f.getPosition.y, (.95f + f.getVelocity.mag() / 1000f))}.getOrElse(p2.z = 0)
 
     loadPixels()
 //    if(mousePressed) {
@@ -116,6 +113,18 @@ class Gravity extends MyPApplet {
 
     parDots.foreach(_.run())
     updatePixels()
-    println(frameRate)
+//    println(frameRate)
+  }
+}
+
+object Gravity {
+  var NUM: Int = _
+  var CELL_ALPHA: Int = _
+  var EMPTY_COUNT: Int = _
+  def main(args: Array[String]) {
+    NUM = args.headOption.map{_.toInt}.getOrElse(250000)
+    CELL_ALPHA = args.drop(1).headOption.map{_.toInt}.getOrElse(14)
+    EMPTY_COUNT = args.drop(2).headOption.map{_.toInt}.getOrElse(1200)
+    PApplet.main(Array("--present", "--display=1", "Gravity"))
   }
 }
