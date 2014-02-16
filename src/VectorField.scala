@@ -4,10 +4,10 @@ import org.zhang.lib.MyPApplet
 import org.zhang.lib._
 import SimpleOpenNI._
 
-class Main extends MyPApplet {
+class VectorField extends MyPApplet {
 
   object SkeletonTracker {
-    val context = new SimpleOpenNI(Main.this)
+    val context = new SimpleOpenNI(VectorField.this)
     if(!context.isInit)
     {
        println("Can't init SimpleOpenNI, maybe the camera is not connected!")
