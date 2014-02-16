@@ -1,6 +1,1 @@
-*.iml
-out/
-.idea/
-*.dll
-*.jar
-META-INF/
+*.class

@@ -1,0 +1,1 @@
+java -jar VectorField.jar 1000000 4
