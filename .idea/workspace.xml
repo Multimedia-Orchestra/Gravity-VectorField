@@ -6,11 +6,14 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6c49f697-91ae-459b-8fb4-7528ab8eac73" name="Default" comment="" />
+    <list default="true" id="6c49f697-91ae-459b-8fb4-7528ab8eac73" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Gravity.scala" afterPath="$PROJECT_DIR$/src/Gravity.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/VectorField.scala" afterPath="$PROJECT_DIR$/src/VectorField.scala" />
+    </list>
     <ignored path="VectorField.iws" />
     <ignored path=".idea/workspace.xml" />
-    <file path="/Dummy.txt" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1392588750370" ignored="false" />
-    <file path="/fragment.java" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1392589941080" ignored="false" />
+    <file path="/Dummy.txt" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1392602183873" ignored="false" />
+    <file path="/fragment.java" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1392602425516" ignored="false" />
     <file path="/Main.scala" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1386487541229" ignored="false" />
     <file path="/Dummy.scala" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1385869383267" ignored="false" />
     <file path="/KVMessage.java" changelist="6c49f697-91ae-459b-8fb4-7528ab8eac73" time="1385967407159" ignored="false" />
@@ -89,25 +92,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="Main.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/Main.scala">
+      <file leaf-file-name="Gravity.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/Gravity.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="4" column="21" selection-start="127" selection-end="127" vertical-scroll-proportion="0.0">
-              <folding />
+            <state line="122" column="16" selection-start="3701" selection-end="3701" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#0#24#0" expanded="true" />
+                <element signature="e#86#102#0" expanded="true" />
+                <element signature="e#176#207#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Gravity.scala" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/Gravity.scala">
+      <file leaf-file-name="VectorField.scala" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/VectorField.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="9" column="0" selection-start="152" selection-end="152" vertical-scroll-proportion="0.21368715">
-              <folding>
-                <element signature="e#0#24#0" expanded="true" />
-                <element signature="e#86#102#0" expanded="true" />
-                <element signature="e#170#817#1" expanded="false" />
-                <element signature="e#933#1671#1" expanded="false" />
-              </folding>
+            <state line="321" column="3" selection-start="10468" selection-end="10468" vertical-scroll-proportion="1.3568182">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -168,6 +170,7 @@
         <option value="$PROJECT_DIR$/src/ReactionDiffusionShader.scala" />
         <option value="C:/Program Files/Java/jdk1.7.0_04/src.zip!/java/lang/Float.java" />
         <option value="$PROJECT_DIR$/src/Gravity.scala" />
+        <option value="$PROJECT_DIR$/src/VectorField.scala" />
       </list>
     </option>
   </component>
@@ -206,6 +209,8 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -248,32 +253,12 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Gravity.scala" />
-              <option name="myItemType" value="org.jetbrains.plugins.scala.components.ScalaDefsProjectViewProvider$ScalaFileTreeNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="VectorField" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="VectorField" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="data" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -289,19 +274,19 @@
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
     <property name="restartRequiresConfirmation" value="true" />
-    <property name="FullScreen" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
+    <property name="FullScreen" value="false" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="dynamic.classpath" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\hellochar\Documents\MOB\VectorField" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Gravity">
+  <component name="RunManager" selected="Application.VectorField Present">
     <configuration default="false" name="TestLeapMotion" type="Application" factoryName="Application" temporary="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <option name="MAIN_CLASS_NAME" value="TestLeapMotion" />
@@ -448,11 +433,11 @@
       <patterns />
       <method />
     </configuration>
-    <configuration default="false" name="Main" type="Application" factoryName="Application">
+    <configuration default="false" name="VectorField" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <option name="MAIN_CLASS_NAME" value="Main" />
+      <option name="MAIN_CLASS_NAME" value="VectorField" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Main" />
+      <option name="PROGRAM_PARAMETERS" value="VectorField" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -471,11 +456,11 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="Main Present" type="Application" factoryName="Application">
+    <configuration default="false" name="VectorField Present" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <option name="MAIN_CLASS_NAME" value="Main" />
+      <option name="MAIN_CLASS_NAME" value="VectorField" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="--present --display=1 Main" />
+      <option name="PROGRAM_PARAMETERS" value="--present --display=1 VectorField" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -538,8 +523,8 @@
       <method />
     </configuration>
     <list size="10">
-      <item index="0" class="java.lang.String" itemvalue="Application.Main" />
-      <item index="1" class="java.lang.String" itemvalue="Application.Main Present" />
+      <item index="0" class="java.lang.String" itemvalue="Application.VectorField" />
+      <item index="1" class="java.lang.String" itemvalue="Application.VectorField Present" />
       <item index="2" class="java.lang.String" itemvalue="Application.Gravity" />
       <item index="3" class="java.lang.String" itemvalue="Application.Gravity Present" />
       <item index="4" class="java.lang.String" itemvalue="Application.Gravity Export" />
@@ -640,7 +625,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1616" height="876" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.28167117" sideWeight="0.0" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32946485" sideWeight="0.6621622" order="5" side_tool="false" content_ui="tabs" />
@@ -650,17 +635,17 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2391892" sideWeight="0.66924566" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.5081081" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2722372" sideWeight="0.0" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32605305" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.18425325" sideWeight="0.265625" order="1" side_tool="true" content_ui="tabs" x="845" y="72" width="368" height="440" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32947233" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13063063" sideWeight="0.62689805" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37310195" sideWeight="0.32624114" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.13063063" sideWeight="0.6280323" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37196764" sideWeight="0.32624114" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Documentation" active="false" anchor="right" auto_hide="true" internal_type="SLIDING" type="FLOATING" visible="false" weight="0.32954547" sideWeight="0.72074884" order="4" side_tool="false" content_ui="tabs" x="307" y="361" width="568" height="324" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2762803" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2722372" sideWeight="0.0" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39906833" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -773,13 +758,6 @@
         <state line="19" column="68" selection-start="561" selection-end="561" vertical-scroll-proportion="0.19498608" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Main.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="21" selection-start="127" selection-end="127" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/TestLeapMotion.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="25" column="5" selection-start="665" selection-end="665" vertical-scroll-proportion="0.039443154" />
@@ -812,13 +790,6 @@
         <state line="713" column="29" selection-start="26889" selection-end="26889" vertical-scroll-proportion="1.9908537" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ReactionDiffusion.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="38" column="0" selection-start="1020" selection-end="1020" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ReactionDiffusionShader.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="15" column="62" selection-start="438" selection-end="438" vertical-scroll-proportion="0.0">
@@ -826,15 +797,28 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/ReactionDiffusion.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="0" selection-start="1020" selection-end="1020" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/Gravity.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="0" selection-start="152" selection-end="152" vertical-scroll-proportion="0.21368715">
+        <state line="122" column="16" selection-start="3701" selection-end="3701" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#0#24#0" expanded="true" />
             <element signature="e#86#102#0" expanded="true" />
-            <element signature="e#170#817#1" expanded="false" />
-            <element signature="e#933#1671#1" expanded="false" />
+            <element signature="e#176#207#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/VectorField.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="321" column="3" selection-start="10468" selection-end="10468" vertical-scroll-proportion="1.3568182">
+          <folding />
         </state>
       </provider>
     </entry>
