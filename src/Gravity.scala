@@ -77,6 +77,8 @@ class Gravity extends MyPApplet {
   override def setup() {
     size(1024, 768)
     imageMode(CENTER)
+    attract.resize(150, 0)
+    repel.resize(150, 0)
   }
 
   lazy val attract = loadImage("attract.png")
@@ -85,6 +87,13 @@ class Gravity extends MyPApplet {
   lazy val handWithFinger = loadImage("hand-with-finger-over.png")
   lazy val motionDirections = loadImage("motion-directions.png")
 
+  def drawAttractor(g: PGraphics, fingerZ: Float, x: Float, y: Float) {
+    val amount = pow(constrain(map(fingerZ, 50, 0, 1f, 0f), 0, 1f), 2.7f)
+    val tintC = if(amount < .998f) 128 else 255
+    g.tint(tintC, amount * 255)
+    g.image(attract, x, y)
+  }
+
   def drawDust(g: PGraphics, hands: List[Finger]) {
     g.beginDraw()
     g.background(0)
@@ -92,10 +101,7 @@ class Gravity extends MyPApplet {
 
     hands.headOption.
       map{f =>
-        val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
-        val tintC = if(amount < .998f) 128 else 255
-        g.tint(tintC, amount * 255)
-        g.image(attract, f.getPosition.x, f.getPosition.y)
+        drawAttractor(g, f.getPosition.z, f.getPosition.x, f.getPosition.y)
         f
       }.filter(_.getPosition.z > 50).map{f => p1.set(f.getPosition.x, f.getPosition.y, -(1+f.getVelocity.mag() / 1000f))}.getOrElse(p1.z = 0)
     hands.drop(1).headOption.
@@ -116,33 +122,42 @@ class Gravity extends MyPApplet {
 
   def drawInstructions(alpha: Float) {
     pushStyle()
-    fill(255, alpha / 2)
+    // background color
+    fill(128, alpha / 2)
     rect(0, 0, width, height)
 
     textAlign(CENTER, CENTER)
     fill(255, alpha)
-    text("Move your finger up and down, side to side.", width/2, height/4)
+    textSize(20)
+    text("Keep your hand at least one foot above the Leap Motion.", width/2, height/4)
+
+    val yBaseline = 2 * height / 3
     tint(255, alpha)
-    image(leapMotion, width/4, height/2)
+    image(leapMotion, width/4, yBaseline)
     imageMode(CORNER)
-    image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), height/2 + 30)
+    image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), yBaseline + 30)
     imageMode(CENTER)
 
-    image(leapMotion, 2*width/4, height/2)
+    image(leapMotion, 2*width/4, yBaseline)
     matrix {
-      translate(width/2 + handWithFinger.width / 2 - 15, height/2 + handWithFinger.height / 2 - 15 + 30)
-      scale(pow(1.25f, logistic(sin(millis() / 300f))))
+      translate(width/2 + handWithFinger.width / 2 - 15, yBaseline + handWithFinger.height / 2 - 15 + 30)
+      scale(pow(1.1f, logistic(sin(millis() / 300f))))
       image(handWithFinger, 0, 0)
     }
 
-    image(leapMotion, 3*width/4, height/2)
+    image(leapMotion, 3*width/4, yBaseline)
     imageMode(CORNER)
-    val pokeOffset = -(1 + logistic(4 * sin(millis() / 500f))) / 2 * 50
+    val fingerZ = map(logistic(4 * sin(millis() / 500f)), -1, 1, 0, 100)
     // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
     // the image on the finger
     // add 30 to the y to move the finger to the back of the leap motion
-    image(handWithFinger, 3*width/4 - 15, height/2 - 15 + 30 + pokeOffset)
+    image(handWithFinger, 3*width/4 - 15, yBaseline - 15 + 60 - fingerZ)
     imageMode(CENTER)
+    drawAttractor(g, fingerZ, 3*width/4, yBaseline - 100)
+    if(fingerZ > 50) {
+      fill(64, 255, 128, alpha)
+      text("Attracting", 3*width/4 + 150, yBaseline - 100)
+    }
     popStyle()
   }
 
@@ -179,7 +194,7 @@ class Gravity extends MyPApplet {
         drawInstructions(alpha)
       }
     }
-    println(hands)
+//    println(hands)
 
     if(keyPressed && key == ' ') {
       saveFrame("frames/gravity-####.png")
