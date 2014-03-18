@@ -1,3 +1,4 @@
+import de.voidplus.leapmotion.Finger
 import processing.core._
 import org.zhang.lib._
 
@@ -35,7 +36,7 @@ class Gravity extends MyPApplet {
       val mag = sqrt(dx*dx + dy*dy)
       vel.add(vec.z * dx / mag, vec.z * dy / mag, 0)
     }
-    def run() {
+    def runAndDraw(g: PGraphics) {
       if(p1.z != 0)
         attract(p1)
       if(p2.z != 0)
@@ -43,14 +44,14 @@ class Gravity extends MyPApplet {
 
       vel.mult(.98f)
       pos.add(vel)
-      draw()
+      draw(g)
     }
 
-    def draw() {
-      if(!(pos.x < 0 || pos.y < 0 || pos.x >= width || pos.y >= height)) {
-        val idx = pos.y.toInt * width + pos.x.toInt
+    def draw(g: PGraphics) {
+      if(!(pos.x < 0 || pos.y < 0 || pos.x >= g.width || pos.y >= g.height)) {
+        val idx = pos.y.toInt * g.width + pos.x.toInt
         //this line has a non-deterministic set in it but it doesn't make a difference visually
-        pixels(idx) = colorCache(pixels(idx) & 0xFF) // get the blue component (which is the same as red, and green, and the brightness)
+        g.pixels(idx) = colorCache(g.pixels(idx) & 0xFF) // get the blue component (which is the same as red, and green, and the brightness)
       }
     }
   }
@@ -66,44 +67,88 @@ class Gravity extends MyPApplet {
   lazy val parDots = dots.par
 
   lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
+  lazy val dustImage = createGraphics(width, height, JAVA2D)
 
-  var emptyCount = 0
+  // When emptyCount >= this threshold, show the help message
+  val SHOW_HELP_THRESHOLD = 400
+
+  var emptyCount = SHOW_HELP_THRESHOLD
+  var lastFrameWithoutFingers = 0
   override def setup() {
-    size(displayWidth, displayHeight)
+    size(1024, 768)
     imageMode(CENTER)
   }
 
   lazy val attract = loadImage("attract.png")
   lazy val repel = loadImage("repel.png")
+  lazy val leapMotion = loadImage("leapmotion-over.png")
+  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
+  lazy val motionDirections = loadImage("motion-directions.png")
 
-  override def draw() {
-    background(0)
+  def drawDust(g: PGraphics, hands: List[Finger]) {
+    g.beginDraw()
+    g.background(0)
+    g.imageMode(CENTER)
 
-    val hands = Tracker.getHands
-    if(hands.isEmpty) emptyCount += 1
-    else emptyCount = 0
-    if(emptyCount == Gravity.EMPTY_COUNT) {
-      reset()
-    }
-    println(hands)
     hands.headOption.
       map{f =>
         val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
         val tintC = if(amount < .998f) 128 else 255
-        tint(tintC, amount * 255)
-        image(attract, f.getPosition.x, f.getPosition.y)
+        g.tint(tintC, amount * 255)
+        g.image(attract, f.getPosition.x, f.getPosition.y)
         f
       }.filter(_.getPosition.z > 50).map{f => p1.set(f.getPosition.x, f.getPosition.y, -(1+f.getVelocity.mag() / 1000f))}.getOrElse(p1.z = 0)
     hands.drop(1).headOption.
       map{f =>
         val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
         val tintC = if(amount < .998f) 128 else 255
-        tint(tintC, amount * 255)
-        image(repel, f.getPosition.x, f.getPosition.y)
+        g.tint(tintC, amount * 255)
+        g.image(repel, f.getPosition.x, f.getPosition.y)
         f
       }.filter(_.getPosition.z > 50).map{f => p2.set(f.getPosition.x, f.getPosition.y, (.95f + f.getVelocity.mag() / 1000f))}.getOrElse(p2.z = 0)
 
-    loadPixels()
+    g.loadPixels()
+    parDots.foreach(_.runAndDraw(g))
+    g.updatePixels()
+
+    g.endDraw()
+  }
+
+  def drawInstructions(alpha: Float) {
+    pushStyle()
+    fill(255, alpha / 2)
+    rect(0, 0, width, height)
+
+    textAlign(CENTER, CENTER)
+    fill(255, alpha)
+    text("Move your finger up and down, side to side.", width/2, height/4)
+    tint(255, alpha)
+    image(leapMotion, width/4, height/2)
+    imageMode(CORNER)
+    image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), height/2 + 30)
+    imageMode(CENTER)
+
+    image(leapMotion, 2*width/4, height/2)
+    matrix {
+      translate(width/2 + handWithFinger.width / 2 - 15, height/2 + handWithFinger.height / 2 - 15 + 30)
+      scale(pow(1.25f, logistic(sin(millis() / 300f))))
+      image(handWithFinger, 0, 0)
+    }
+
+    image(leapMotion, 3*width/4, height/2)
+    imageMode(CORNER)
+    val pokeOffset = -(1 + logistic(4 * sin(millis() / 500f))) / 2 * 50
+    // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
+    // the image on the finger
+    // add 30 to the y to move the finger to the back of the leap motion
+    image(handWithFinger, 3*width/4 - 15, height/2 - 15 + 30 + pokeOffset)
+    imageMode(CENTER)
+    popStyle()
+  }
+
+  def logistic(x: Float) = 2 * (1 / (1 + exp(-x * PI)) - .5f)
+
+  override def draw() {
 //    if(mousePressed) {
 //      p1.set(mouseX, mouseY, if(mouseButton == LEFT) -1 else 1)
 //    } else {
@@ -111,8 +156,34 @@ class Gravity extends MyPApplet {
 //    }
 //    p2.set(width/2, height/2, -1)
 
-    parDots.foreach(_.run())
-    updatePixels()
+    val hands = Tracker.getHands
+    drawDust(dustImage, hands)
+    image(dustImage, width/2, height/2)
+    
+    if(hands.isEmpty) {
+      emptyCount += 1
+      lastFrameWithoutFingers = frameCount
+      
+      if(emptyCount > SHOW_HELP_THRESHOLD) {
+        val alpha = min(255, (emptyCount - SHOW_HELP_THRESHOLD) * 5)
+        drawInstructions(alpha)
+      }
+      if(emptyCount == Gravity.EMPTY_COUNT) {
+        reset()
+      }
+      
+    } else {
+      emptyCount = 0
+      val alpha = max(0, 255 - (frameCount - lastFrameWithoutFingers) * 15)
+      if(alpha > 0) {
+        drawInstructions(alpha)
+      }
+    }
+    println(hands)
+
+    if(keyPressed && key == ' ') {
+      saveFrame("frames/gravity-####.png")
+    }
 //    println(frameRate)
   }
 }
@@ -125,6 +196,6 @@ object Gravity {
     NUM = args.headOption.map{_.toInt}.getOrElse(250000)
     CELL_ALPHA = args.drop(1).headOption.map{_.toInt}.getOrElse(14)
     EMPTY_COUNT = args.drop(2).headOption.map{_.toInt}.getOrElse(1200)
-    PApplet.main(Array("--present", "--display=1", "Gravity"))
+    PApplet.main(Array("--display=1", "Gravity"))
   }
 }
