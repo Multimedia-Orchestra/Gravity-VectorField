@@ -63,6 +63,7 @@ class Gravity extends MyPApplet {
       dots(i).vel.set(0, 0)
       dots(i).pos.set(i.toFloat * width / Gravity.NUM, height/2)
     }
+    emptyCount = SHOW_HELP_THRESHOLD
   }
 
   lazy val dots = Array.tabulate(Gravity.NUM)(i => new Dot(new PVector(i.toFloat * width / Gravity.NUM, height/2)))
@@ -72,14 +73,17 @@ class Gravity extends MyPApplet {
   lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
   lazy val dustImage = createGraphics(width, height, JAVA2D)
 
-  // When emptyCount >= this threshold, show the help message
-  val SHOW_HELP_THRESHOLD = 400
+  // [0] == this frame, [1] == 1 frame ago, etc...
+  var hasFingerHistory = List[Boolean]()
 
-  var emptyCount = SHOW_HELP_THRESHOLD
-  var lastFrameWithoutFingers = 0
+  // When emptyCount >= this threshold, show the help message
+  val SHOW_HELP_THRESHOLD = 800
+
+  var emptyCount = 0
   override def setup() {
     size(displayWidth, displayHeight)
     imageMode(CENTER)
+    reset()
     attract.resize(150, 0)
     repel.resize(150, 0)
   }
@@ -131,84 +135,97 @@ class Gravity extends MyPApplet {
     g.endDraw()
   }
 
-  def drawInstructions(alpha: Float) {
-    pushStyle()
-    // background color
-    fill(128, alpha / 2)
-    rect(0, 0, width, height)
-
-    textAlign(CENTER, CENTER)
-    fill(255, alpha)
-    textSize(20)
-    val leftWidth = textWidth("Keep your hand at least ")
-    val rightWidth = textWidth("one foot above the Leap Motion.")
-    text("Keep your hand at least ", width/2 - rightWidth/2, height/4)
-    fill(64, 255, 128, alpha)
-    text("one foot above the Leap Motion.", width/2 + leftWidth/2, height/4)
-
-    val yBaseline = 2 * height / 3
-    tint(255, alpha)
-    image(leapMotion, width/4, yBaseline)
-    imageMode(CORNER)
-    image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), yBaseline + 30)
-    imageMode(CENTER)
-
-    image(leapMotion, 2*width/4, yBaseline)
-    matrix {
-      translate(width/2 + handWithFinger.width / 2 - 15, yBaseline + handWithFinger.height / 2 - 15 + 30)
-      scale(pow(1.1f, logistic(sin(millis() / 300f))))
-      image(handWithFinger, 0, 0)
-    }
-
-    image(leapMotion, 3*width/4, yBaseline)
-    imageMode(CORNER)
-    val fingerZ = map(logistic(4 * sin(millis() / 500f)), -1, 1, 0, 100)
-    // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
-    // the image on the finger
-    // add 30 to the y to move the finger to the back of the leap motion
-    image(handWithFinger, 3*width/4 - 15, yBaseline - 15 + 60 - fingerZ)
-    imageMode(CENTER)
-    drawAttractor(g, fingerZ, 3*width/4, yBaseline - 100)
-    if(fingerZ > 50) {
-      fill(64, 255, 128, alpha)
-      text("Attracting", 3*width/4 + 150, yBaseline - 100)
-    }
-    popStyle()
-  }
-
   def logistic(x: Float) = 2 * (1 / (1 + exp(-x * PI)) - .5f)
 
-  override def draw() {
-//    if(mousePressed) {
-//      p1.set(mouseX, mouseY, if(mouseButton == LEFT) -1 else 1)
-//    } else {
-//      p1.z = 0
-//    }
-//    p2.set(width/2, height/2, -1)
+  object Instructions {
+    private var alpha = 0.0f
+    private var wantedAlpha = 0.0f
 
+    def show() {
+      wantedAlpha = 255
+    }
+
+    def hide() {
+      wantedAlpha = 0
+    }
+
+    private def drawInstructions(alpha: Float) {
+      pushStyle()
+      // background color
+      fill(128, alpha / 2)
+      rect(0, 0, width, height)
+
+      textAlign(CENTER, CENTER)
+      fill(255, alpha)
+      textSize(20)
+      val leftWidth = textWidth("Keep your hand at least ")
+      val rightWidth = textWidth("one foot above the Leap Motion.")
+      text("Keep your hand at least ", width/2 - rightWidth/2, height/4)
+      fill(64, 255, 128, alpha)
+      text("one foot above the Leap Motion.", width/2 + leftWidth/2, height/4)
+
+      val yBaseline = 2 * height / 3
+      tint(255, alpha)
+      image(leapMotion, width/4, yBaseline)
+      imageMode(CORNER)
+      image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), yBaseline + 30)
+      imageMode(CENTER)
+
+      image(leapMotion, 2*width/4, yBaseline)
+      matrix {
+        translate(width/2 + handWithFinger.width / 2 - 15, yBaseline + handWithFinger.height / 2 - 15 + 30)
+        scale(pow(1.1f, logistic(sin(millis() / 300f))))
+        image(handWithFinger, 0, 0)
+      }
+
+      image(leapMotion, 3*width/4, yBaseline)
+      imageMode(CORNER)
+      val fingerZ = map(logistic(4 * sin(millis() / 500f)), -1, 1, 0, 100)
+      // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
+      // the image on the finger
+      // add 30 to the y to move the finger to the back of the leap motion
+      image(handWithFinger, 3*width/4 - 15, yBaseline - 15 + 60 - fingerZ)
+      imageMode(CENTER)
+      drawAttractor(g, fingerZ, 3*width/4, yBaseline - 100)
+      if(fingerZ > 50) {
+        fill(64, 255, 128, alpha)
+        text("Attracting", 3*width/4 + 150, yBaseline - 100)
+      }
+      popStyle()
+    }
+
+    def stepAndDraw() {
+      alpha = alpha * .75f + wantedAlpha * .25f
+      if(alpha < 5) {
+        alpha = wantedAlpha
+      } else if(alpha > 254) {
+        alpha = wantedAlpha
+      }
+
+      if(alpha >= 5) {
+        drawInstructions(alpha)
+      }
+    }
+  }
+
+  override def draw() {
     val fingers = Tracker.getFingers
     drawDust(dustImage, fingers)
     image(dustImage, width/2, height/2)
     
     if(fingers.isEmpty) {
       emptyCount += 1
-      lastFrameWithoutFingers = frameCount
-      
       if(emptyCount > SHOW_HELP_THRESHOLD) {
-        val alpha = min(255, (emptyCount - SHOW_HELP_THRESHOLD) * 5)
-        drawInstructions(alpha)
+        Instructions.show()
       }
-      if(emptyCount == Gravity.EMPTY_COUNT) {
+      if(emptyCount >= Gravity.EMPTY_COUNT) {
         reset()
       }
-      
     } else {
       emptyCount = 0
-      val alpha = max(0, 255 - (frameCount - lastFrameWithoutFingers) * 15)
-      if(alpha > 0) {
-        drawInstructions(alpha)
-      }
+      Instructions.hide()
     }
+    Instructions.stepAndDraw()
 //    println(hands)
 
     if(keyPressed && key == ' ') {
