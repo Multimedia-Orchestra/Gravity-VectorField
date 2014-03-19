@@ -29,7 +29,35 @@ class Gravity extends MyPApplet {
       val mag = sqrt(dx*dx + dy*dy)
       vel.add(vec.z * dx / mag, vec.z * dy / mag, 0)
     }
-    def runAndDraw(g: PGraphics) {
+
+    def runAndDraw0() {
+      step2()
+    }
+    def runAndDraw1() {
+      if(attractors(0).z != 0)
+        attract(attractors(0))
+      step2()
+    }
+
+    def runAndDraw2() {
+      if(attractors(0).z != 0)
+        attract(attractors(0))
+      if(attractors(1).z != 0)
+        attract(attractors(1))
+      step2()
+    }
+    def runAndDraw3() {
+      if(attractors(0).z != 0)
+        attract(attractors(0))
+      if(attractors(1).z != 0)
+        attract(attractors(1))
+      if(attractors(2).z != 0)
+        attract(attractors(2))
+      if(attractors(3).z != 0)
+        attract(attractors(3))
+      step2()
+    }
+    def runAndDraw4() {
       if(attractors(0).z != 0)
         attract(attractors(0))
       if(attractors(1).z != 0)
@@ -41,19 +69,20 @@ class Gravity extends MyPApplet {
       if(attractors(4).z != 0)
         attract(attractors(4))
 
-
+      step2()
+    }
+    
+    def step2() {
       vel.mult(.98f)
-      //dt
       pos.add(vel)
-
-      draw(g)
+      draw()
     }
 
-    def draw(g: PGraphics) {
-      if(!(pos.x < 0 || pos.y < 0 || pos.x >= g.width || pos.y >= g.height)) {
-        val idx = pos.y.toInt * g.width + pos.x.toInt
+    def draw() {
+      if(!(pos.x < 0 || pos.y < 0 || pos.x >= width || pos.y >= height)) {
+        val idx = pos.y.toInt * width + pos.x.toInt
         //this line has a non-deterministic set in it but it doesn't make a difference visually
-        g.pixels(idx) = colorCache(g.pixels(idx) & 0xFF) // get the blue component (which is the same as red, and green, and the brightness)
+        pixels(idx) = colorCache(pixels(idx) & 0xFF) // get the blue component (which is the same as red, and green, and the brightness)
       }
     }
   }
@@ -115,7 +144,7 @@ class Gravity extends MyPApplet {
       // add 30 to the y to move the finger to the back of the leap motion
       image(handWithFinger, 3*width/4 - 15, yBaseline - 15 + 60 - fingerZ)
       imageMode(CENTER)
-      drawAttractor(g, fingerZ, 3*width/4, yBaseline - 100)
+      drawAttractor(fingerZ, 3*width/4, yBaseline - 100)
       if(fingerZ > 50) {
         fill(64, 255, 128, alpha)
         text("Attracting", 3*width/4 + 150, yBaseline - 100)
@@ -156,6 +185,7 @@ class Gravity extends MyPApplet {
     reset()
     attract.resize(150, 0)
     repel.resize(150, 0)
+    frameRate(25)
   }
 
   lazy val attract = loadImage("attract.png")
@@ -164,28 +194,34 @@ class Gravity extends MyPApplet {
   lazy val handWithFinger = loadImage("hand-with-finger-over.png")
   lazy val motionDirections = loadImage("motion-directions.png")
 
-  def drawAttractor(g: PGraphics, fingerZ: Float, x: Float, y: Float) {
+  def drawAttractor(fingerZ: Float, x: Float, y: Float) {
     val amount = pow(constrain(map(fingerZ, 50, 0, 1f, 0f), 0, 1f), 2.7f)
     val tintC = if(amount < .998f) 128 else 255
-    g.tint(tintC, amount * 255)
-    g.image(attract, x, y)
+    tint(tintC, amount * 255)
+    image(attract, x, y)
   }
 
-  def runAndDrawDust(g: PGraphics, fingers: List[Finger]) {
-    g.background(0)
-    g.imageMode(CENTER)
+  def runAndDrawDust(fingers: List[Finger]) {
+    background(0)
+    imageMode(CENTER)
 
     attractors.foreach {_.z = 0}
     for((finger, idx) <- fingers.zipWithIndex) {
-      drawAttractor(g, finger.getPosition.z, finger.getPosition.x, finger.getPosition.y)
+      drawAttractor(finger.getPosition.z, finger.getPosition.x, finger.getPosition.y)
       if(finger.getPosition.z > 50) {
         attractors(idx).set(finger.getPosition.x, finger.getPosition.y, -(1+finger.getVelocity.mag() / 1000f))
       }
     }
 
-    g.loadPixels()
-    parDots.foreach(_.runAndDraw(g))
-    g.updatePixels()
+    loadPixels()
+    fingers.length match {
+      case 0 => parDots.foreach(_.runAndDraw0())
+      case 1 => parDots.foreach(_.runAndDraw1())
+      case 2 => parDots.foreach(_.runAndDraw2())
+      case 3 => parDots.foreach(_.runAndDraw3())
+      case 4 | _ => parDots.foreach(_.runAndDraw4())
+    }
+    updatePixels()
   }
 
   def logistic(x: Float) = 2 * (1 / (1 + exp(-x * PI)) - .5f)
@@ -193,7 +229,7 @@ class Gravity extends MyPApplet {
 
   override def draw() {
     val fingers = Tracker.getFingers
-    runAndDrawDust(g, fingers)
+    runAndDrawDust(fingers)
     
     if(fingers.isEmpty) {
       emptyCount += 1
