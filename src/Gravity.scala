@@ -66,77 +66,6 @@ class Gravity extends MyPApplet {
     emptyCount = SHOW_HELP_THRESHOLD
   }
 
-  lazy val dots = Array.tabulate(Gravity.NUM)(i => new Dot(new PVector(i.toFloat * width / Gravity.NUM, height/2)))
-  lazy val parDots = dots.par
-  val attractors = Array.fill(10)(new PVector())
-
-  lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
-  lazy val dustImage = createGraphics(width, height, JAVA2D)
-
-  // [0] == this frame, [1] == 1 frame ago, etc...
-  var hasFingerHistory = List[Boolean]()
-
-  // When emptyCount >= this threshold, show the help message
-  val SHOW_HELP_THRESHOLD = 800
-
-  var emptyCount = 0
-  override def setup() {
-    size(displayWidth, displayHeight)
-    imageMode(CENTER)
-    reset()
-    attract.resize(150, 0)
-    repel.resize(150, 0)
-  }
-
-  lazy val attract = loadImage("attract.png")
-  lazy val repel = loadImage("repel.png")
-  lazy val leapMotion = loadImage("leapmotion-over.png")
-  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
-  lazy val motionDirections = loadImage("motion-directions.png")
-
-  def drawAttractor(g: PGraphics, fingerZ: Float, x: Float, y: Float) {
-    val amount = pow(constrain(map(fingerZ, 50, 0, 1f, 0f), 0, 1f), 2.7f)
-    val tintC = if(amount < .998f) 128 else 255
-    g.tint(tintC, amount * 255)
-    g.image(attract, x, y)
-  }
-
-  def drawDust(g: PGraphics, fingers: List[Finger]) {
-    g.beginDraw()
-    g.background(0)
-    g.imageMode(CENTER)
-
-    attractors.foreach {_.z = 0}
-    for((finger, idx) <- fingers.zipWithIndex) {
-      drawAttractor(g, finger.getPosition.z, finger.getPosition.x, finger.getPosition.y)
-      if(finger.getPosition.z > 50) {
-        attractors(idx).set(finger.getPosition.x, finger.getPosition.y, -(1+finger.getVelocity.mag() / 1000f))
-      }
-    }
-
-//    hands.headOption.
-//      map{f =>
-//        drawAttractor(g, f.getPosition.z, f.getPosition.x, f.getPosition.y)
-//        f
-//      }.filter(_.getPosition.z > 50).map{f => p1.set(f.getPosition.x, f.getPosition.y, -(1+f.getVelocity.mag() / 1000f))}.getOrElse(p1.z = 0)
-//    hands.drop(1).headOption.
-//      map{f =>
-//        val amount = pow(constrain(map(f.getPosition.z, 50, 0, 1f, 0f), 0, 1f), 2.7f)
-//        val tintC = if(amount < .998f) 128 else 255
-//        g.tint(tintC, amount * 255)
-//        g.image(repel, f.getPosition.x, f.getPosition.y)
-//        f
-//      }.filter(_.getPosition.z > 50).map{f => p2.set(f.getPosition.x, f.getPosition.y, (.95f + f.getVelocity.mag() / 1000f))}.getOrElse(p2.z = 0)
-
-    g.loadPixels()
-    parDots.foreach(_.runAndDraw(g))
-    g.updatePixels()
-
-    g.endDraw()
-  }
-
-  def logistic(x: Float) = 2 * (1 / (1 + exp(-x * PI)) - .5f)
-
   object Instructions {
     private var alpha = 0.0f
     private var wantedAlpha = 0.0f
@@ -208,10 +137,63 @@ class Gravity extends MyPApplet {
     }
   }
 
+  lazy val dots = Array.tabulate(Gravity.NUM)(i => new Dot(new PVector(i.toFloat * width / Gravity.NUM, height/2)))
+  lazy val parDots = dots.par
+  val attractors = Array.fill(10)(new PVector())
+
+  lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
+
+  // [0] == this frame, [1] == 1 frame ago, etc...
+  var hasFingerHistory = List[Boolean]()
+
+  // When emptyCount >= this threshold, show the help message
+  val SHOW_HELP_THRESHOLD = 800
+
+  var emptyCount = 0
+  override def setup() {
+    size(displayWidth, displayHeight)
+    imageMode(CENTER)
+    reset()
+    attract.resize(150, 0)
+    repel.resize(150, 0)
+  }
+
+  lazy val attract = loadImage("attract.png")
+  lazy val repel = loadImage("repel.png")
+  lazy val leapMotion = loadImage("leapmotion-over.png")
+  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
+  lazy val motionDirections = loadImage("motion-directions.png")
+
+  def drawAttractor(g: PGraphics, fingerZ: Float, x: Float, y: Float) {
+    val amount = pow(constrain(map(fingerZ, 50, 0, 1f, 0f), 0, 1f), 2.7f)
+    val tintC = if(amount < .998f) 128 else 255
+    g.tint(tintC, amount * 255)
+    g.image(attract, x, y)
+  }
+
+  def runAndDrawDust(g: PGraphics, fingers: List[Finger]) {
+    g.background(0)
+    g.imageMode(CENTER)
+
+    attractors.foreach {_.z = 0}
+    for((finger, idx) <- fingers.zipWithIndex) {
+      drawAttractor(g, finger.getPosition.z, finger.getPosition.x, finger.getPosition.y)
+      if(finger.getPosition.z > 50) {
+        attractors(idx).set(finger.getPosition.x, finger.getPosition.y, -(1+finger.getVelocity.mag() / 1000f))
+      }
+    }
+
+    g.loadPixels()
+    parDots.foreach(_.runAndDraw(g))
+    g.updatePixels()
+  }
+
+  def logistic(x: Float) = 2 * (1 / (1 + exp(-x * PI)) - .5f)
+
+
   override def draw() {
     val fingers = Tracker.getFingers
-    drawDust(dustImage, fingers)
-    image(dustImage, width/2, height/2)
+    runAndDrawDust(g, fingers)
     
     if(fingers.isEmpty) {
       emptyCount += 1
