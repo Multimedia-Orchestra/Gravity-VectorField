@@ -15,11 +15,23 @@ class Gravity extends MyPApplet {
 
     lazy val leap = new LeapMotion(Gravity.this)
 
-    //returns a list of 0, 1, or 2 Fingers
-    def getFingers =
-      leap.getFingers
-        .filter{_.getPosition.z != 50.0f}
+    private var prunedFingers = List[Finger]()
+
+    def update() {
+      val incoming = leap.getFingers
+        .filter{_.getPosition.z != 50.0f} // There's sometimes erroneously reported fingers at z exactly 50.0
         .take(10).toList
+
+//      incomingHistory = (incoming :: incomingHistory).take(5)
+//
+//      // only keep fingers that have existed for the past 5 frames
+//      incomingHistory.reduceLeft((remaining, frame) => remaining.filter(_.getId))
+
+      prunedFingers = incoming.filter(_.getTimeVisible > .3f)
+    }
+
+    //returns a list of 0, 1, or 2 Fingers
+    def getFingers = prunedFingers
   }
 
   class Dot(val pos: PVector, val vel: PVector = new PVector()) {
@@ -115,12 +127,12 @@ class Gravity extends MyPApplet {
 
       textAlign(CENTER, CENTER)
       fill(255, alpha)
-      textSize(20)
-      val leftWidth = textWidth("Keep your hand at least ")
-      val rightWidth = textWidth("one foot above the Leap Motion.")
-      text("Keep your hand at least ", width/2 - rightWidth/2, height/4)
-      fill(64, 255, 128, alpha)
-      text("one foot above the Leap Motion.", width/2 + leftWidth/2, height/4)
+      textSize(32)
+      val leftWidth = textWidth("Hand at least ")
+      val rightWidth = textWidth("one foot above.")
+      text("Hand at least ", width/2 - rightWidth/2, height/4)
+      fill(255, 94, 36, alpha)
+      text("one foot above.", width/2 + leftWidth/2, height/4)
 
       val yBaseline = 2 * height / 3
       tint(255, alpha)
@@ -172,9 +184,12 @@ class Gravity extends MyPApplet {
 
   lazy val colorCache = Array.tabulate(256)(b => color((b + (255 - b) * (Gravity.CELL_ALPHA / 255f)).toInt))
 
-  // [0] == this frame, [1] == 1 frame ago, etc...
-  var hasFingerHistory = List[Boolean]()
 
+  lazy val attract = loadImage("attract.png")
+  lazy val repel = loadImage("repel.png")
+  lazy val leapMotion = loadImage("leapmotion-over.png")
+  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
+  lazy val motionDirections = loadImage("motion-directions.png")
   // When emptyCount >= this threshold, show the help message
   val SHOW_HELP_THRESHOLD = 800
 
@@ -187,12 +202,6 @@ class Gravity extends MyPApplet {
     repel.resize(150, 0)
     frameRate(25)
   }
-
-  lazy val attract = loadImage("attract.png")
-  lazy val repel = loadImage("repel.png")
-  lazy val leapMotion = loadImage("leapmotion-over.png")
-  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
-  lazy val motionDirections = loadImage("motion-directions.png")
 
   def drawAttractor(fingerZ: Float, x: Float, y: Float) {
     val amount = pow(constrain(map(fingerZ, 50, 0, 1f, 0f), 0, 1f), 2.7f)
@@ -228,6 +237,7 @@ class Gravity extends MyPApplet {
 
 
   override def draw() {
+    Tracker.update()
     val fingers = Tracker.getFingers
     runAndDrawDust(fingers)
     
