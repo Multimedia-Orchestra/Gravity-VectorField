@@ -123,44 +123,43 @@ class Gravity extends MyPApplet {
       pushStyle()
       // background color
       fill(128, alpha / 2)
+      rectMode(CORNER)
       rect(0, 0, width, height)
 
       textAlign(CENTER, CENTER)
       fill(255, alpha)
-      textSize(32)
-      val leftWidth = textWidth("Hand at least ")
-      val rightWidth = textWidth("one foot above.")
-      text("Hand at least ", width/2 - rightWidth/2, height/4)
-      fill(255, 94, 36, alpha)
-      text("one foot above.", width/2 + leftWidth/2, height/4)
+      textSize(16)
+      rectMode(CENTER)
+      text("Steadily hold your finger at least 12 inches above the Leap Motion.", width/3, height/4, 300, 80)
 
       val yBaseline = 2 * height / 3
       tint(255, alpha)
-      image(leapMotion, width/4, yBaseline)
-      imageMode(CORNER)
-      image(handWithFinger, width/4 + 80 * logistic(sin(millis() / 500f)), yBaseline + 30)
-      imageMode(CENTER)
+      image(leapMotion, width/3, yBaseline)
+      textAlign(LEFT)
+      text("12 in", width/3 + 35, yBaseline - leapMotion.height / 4)
+      val leapMotionTop = yBaseline - leapMotion.height/2
+      image(hand, width/3 - hand.width/2 + 50 * logistic(sin(millis() / 400f)), leapMotionTop - 25 + 50 * logistic(sin(millis() / 350f)))
 
-      image(leapMotion, 2*width/4, yBaseline)
-      matrix {
-        translate(width/2 + handWithFinger.width / 2 - 15, yBaseline + handWithFinger.height / 2 - 15 + 30)
-        scale(pow(1.1f, logistic(sin(millis() / 300f))))
-        image(handWithFinger, 0, 0)
+      def drawAttractHelp(x: Float) {
+        fill(255, alpha)
+        textAlign(CENTER, CENTER)
+        rectMode(CENTER)
+        text("Poke your finger past the Leap Motion to attract particles.", 2*width/3, height/4, 300, 80)
+        image(leapMotionOverhead, x, yBaseline)
+        imageMode(CORNER)
+        val fingerZ = map(logistic(4 * sin(millis() / 500f)), -1, 1, 0, 100)
+        // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
+        // the image on the finger
+        // add 30 to the y to move the finger to the back of the leap motion
+        image(handOverhead, x - 15, yBaseline - 15 + 60 - fingerZ)
+        imageMode(CENTER)
+        drawAttractor(fingerZ, x, yBaseline - 100)
+        if(fingerZ > 50) {
+          fill(64, 255, 128, alpha)
+          text("Attracting", x + 150, yBaseline - 100)
+        }
       }
-
-      image(leapMotion, 3*width/4, yBaseline)
-      imageMode(CORNER)
-      val fingerZ = map(logistic(4 * sin(millis() / 500f)), -1, 1, 0, 100)
-      // the center of the pointing finger is about 15, 15 so add that to the offset to "center"
-      // the image on the finger
-      // add 30 to the y to move the finger to the back of the leap motion
-      image(handWithFinger, 3*width/4 - 15, yBaseline - 15 + 60 - fingerZ)
-      imageMode(CENTER)
-      drawAttractor(fingerZ, 3*width/4, yBaseline - 100)
-      if(fingerZ > 50) {
-        fill(64, 255, 128, alpha)
-        text("Attracting", 3*width/4 + 150, yBaseline - 100)
-      }
+      drawAttractHelp(2*width/3)
       popStyle()
     }
 
@@ -187,9 +186,11 @@ class Gravity extends MyPApplet {
 
   lazy val attract = loadImage("attract.png")
   lazy val repel = loadImage("repel.png")
-  lazy val leapMotion = loadImage("leapmotion-over.png")
-  lazy val handWithFinger = loadImage("hand-with-finger-over.png")
-  lazy val motionDirections = loadImage("motion-directions.png")
+  lazy val leapMotionOverhead = loadImage("leapmotion-over.png")
+  lazy val handOverhead = loadImage("hand-with-finger-over.png")
+  lazy val leapMotion = loadImage("leapmotion.png")
+  lazy val hand = loadImage("hand-with-finger.png")
+//  lazy val motionDirections = loadImage("motion-directions.png")
   // When emptyCount >= this threshold, show the help message
   val SHOW_HELP_THRESHOLD = 800
 
@@ -200,6 +201,7 @@ class Gravity extends MyPApplet {
     reset()
     attract.resize(150, 0)
     repel.resize(150, 0)
+    leapMotion.resize(0, 300)
     frameRate(25)
   }
 
